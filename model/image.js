@@ -11,14 +11,6 @@ const imageSchema = new Schema({
     }
 })
 
-imageSchema.pre('save', async function (next) {
-    try {
-        console.log("here");
-        next();
-    } catch (error) {
-
-    }
-})
 
 const image = mongoose.model("image", imageSchema);
 module.exports = image

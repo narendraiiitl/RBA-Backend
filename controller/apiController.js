@@ -4,6 +4,7 @@ const image = require('../model/image');
 const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../helper/jwtHelper');
 const client = require('../helper/initRedis');
 const { response } = require('express');
+const user = require('../model/user');
 
 
 module.exports = {
@@ -42,13 +43,15 @@ module.exports = {
         try {
             const { aud } = req.payload;
             const { imageurl } = req.body;
-            console.log({ aud, imageurl });
-
+            const User = await user.findOne({ _id: aud }).exec();
+            console.log(User);
             const Image = new image({ imageurl, uploader: aud });
             await Image.save()
                 .then(async (savedimage) => {
-                    console.log(savedimage);
-                    res.send(savedimage);
+                    const { _id, imageurl, uploader } = savedimage;
+                    const response = { _id, imageurl, uploader, username: User.name };
+                    console.log(response);
+                    res.send(response);
                 })
         } catch (error) {
             next(error);
@@ -56,11 +59,11 @@ module.exports = {
     },
     getimages: async (req, res, next) => {
         try {
-            image.find({}, (err, response) => {
-                if (err) throw createError.InternalServerError();
-                console.log(response);
-                res.send(response);
-            })
+            const resp = await image.find()
+                .populate('uploader').exec();
+            console.log(resp);
+            res.send(resp);
+
         } catch (error) {
             next(error);
         }
@@ -68,27 +71,23 @@ module.exports = {
     deleteimage: async (req, res, next) => {
         try {
             const { aud } = req.payload;
+            const requestedby = await user.findOne({ _id: aud }).exec();
             const { _id } = req.body;
-            console.log({ aud, _id });
-            User.find({ _id: aud }, (err, user) => {
-                if (err) throw createError.InternalServerError();
-                if (user.role == 'Admin') {
-                    image.findOneAndDelete({ _id }, function (err, docs) {
-                        if (err) {
-                            throw createError.InternalServerError();
-                        }
-                        else {
-                            console.log("Deleted image : ", docs);
-                        }
-                    });
-
-                }
-                else if(user.role)
-
-
-            })
-
-
+            const User = await image
+                .findOne({ _id })
+                .populate('uploader')
+                .exec()
+            console.log({ requestedby, User });
+            if (requestedby.role === "Admin")
+                await image.deleteOne({ _id }).exec();
+            else if (requestedby.role === 'Moderator' && User.uploader.role === "Admin")
+                throw createError.Unauthorized();
+            else if ((requestedby.role === 'Moderator' && User.uploader.role === "Member"))
+                await image.deleteOne({ _id }).exec();
+            else if (requestedby._id === User.uploader._id)
+                await image.deleteOne({ _id }).exec();
+            else
+                throw createError.Unauthorized();
             res.sendStatus(200);
         } catch (error) {
             next(error);
