@@ -77,14 +77,17 @@ module.exports = {
                 .findOne({ _id })
                 .populate('uploader')
                 .exec()
-            console.log({ requestedby, User });
+            console.log(requestedby._id, User.uploader._id);
+            // if (requestedby._id.toString() == User.uploader._id.toString()) {
+            //     console.log("true");
+            // }
             if (requestedby.role === "Admin")
                 await image.deleteOne({ _id }).exec();
             else if (requestedby.role === 'Moderator' && User.uploader.role === "Admin")
                 throw createError.Unauthorized();
             else if ((requestedby.role === 'Moderator' && User.uploader.role === "Member"))
                 await image.deleteOne({ _id }).exec();
-            else if (requestedby._id === User.uploader._id)
+            else if (requestedby._id.toString() === User.uploader._id.toString())
                 await image.deleteOne({ _id }).exec();
             else
                 throw createError.Unauthorized();
