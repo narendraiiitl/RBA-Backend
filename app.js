@@ -49,6 +49,7 @@ app.use((err, req, res, next) => {
             message: err.message
         },
     })
+    console.log(err);
 })
 
 app.listen(process.env.port, () => {

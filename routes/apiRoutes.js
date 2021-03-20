@@ -7,4 +7,12 @@ router.post('/profile', verifyAccessToken, apicontroller.postprofile)
 
 router.get('/profile', verifyAccessToken, apicontroller.getprofile)
 
+router.post('/uploadimage', verifyAccessToken, apicontroller.uploadimage)
+
+router.get('/showimage', verifyAccessToken, apicontroller.getimages)
+
+router.delete('/deleteimage', verifyAccessToken, apicontroller.deleteimage)
+
+router.get('/ping', verifyAccessToken, apicontroller.ping)
+
 module.exports = router;
